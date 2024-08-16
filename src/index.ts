@@ -26,14 +26,12 @@ export default {
 			return message.forward(env.FORWARD_EMAIL);
 		const rawEmail = await streamToArrayBuffer(message.raw, message.rawSize);
 		const parsedEmail = await parser.parse(rawEmail);
-		const { to, subject } = parsedEmail.subject!.match(
-			/^"(?<to>.+<.+>)" ?(?<subject>.*)/
-		)!.groups!;
+		const [to, ...subject] = parsedEmail.subject!.split(" ");
 		const resend = new Resend(env.RESEND_API_KEY);
 		const res = await resend.emails.send({
 			from: message.to,
 			to,
-			subject,
+			subject: subject.join(" "),
 			html: parsedEmail.html!,
 			text: parsedEmail.text!,
 			attachments: parsedEmail.attachments.map((att) => ({
@@ -44,6 +42,12 @@ export default {
 			headers: { date: parsedEmail.date! },
 		});
 
+		console.log(
+			parsedEmail.deliveredTo,
+			parsedEmail.replyTo,
+			parsedEmail.to,
+			parsedEmail.headers.map((h) => Object.entries(h))
+		);
 		if (res.error) {
 			message.setReject(res.error.message);
 			throw new Error(res.error.message);
