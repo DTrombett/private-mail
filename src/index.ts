@@ -29,7 +29,7 @@ export default {
 		const [to, ...subject] = parsedEmail.subject!.split(" ");
 		const resend = new Resend(env.RESEND_API_KEY);
 		const res = await resend.emails.send({
-			from: message.to,
+			from: `${parsedEmail.to![0].name} <${parsedEmail.to![0].address}>`,
 			to,
 			subject: subject.join(" "),
 			html: parsedEmail.html!,
@@ -42,12 +42,6 @@ export default {
 			headers: { date: parsedEmail.date! },
 		});
 
-		console.log(
-			parsedEmail.deliveredTo,
-			parsedEmail.replyTo,
-			parsedEmail.to,
-			parsedEmail.headers.map((h) => Object.entries(h))
-		);
 		if (res.error) {
 			message.setReject(res.error.message);
 			throw new Error(res.error.message);
